@@ -1,0 +1,4 @@
+training/dataset/
+.env
+__pycache__/
+*.pyc
