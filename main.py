@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import shutil
 import os
-from inference import run_inference
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from route.predict import router as predict_router

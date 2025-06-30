@@ -6,8 +6,7 @@ from sklearn.metrics import precision_score, accuracy_score
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 import os
-
-from meld_dataset import MELDDataset
+from .meld_dataset import MELDDataset
 
 
 class TextEncoder(nn.Module):

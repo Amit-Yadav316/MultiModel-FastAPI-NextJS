@@ -9,10 +9,20 @@ import numpy as np
 import subprocess
 import whisper
 import asyncio
-from processors import VideoUtteranceProcessor
+from preprocessor import VideoUtteranceProcessor
 from utils import EMOTION_MAP, SENTIMENT_MAP
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def get_video_duration(video_path):
+    import ffmpeg
+    try:
+        probe = ffmpeg.probe(video_path)
+        duration = float(probe['format']['duration'])
+        return duration
+    except Exception as e:
+        print(f"Error getting duration: {e}")
+        return None
 
 
 model = MultimodalSentimentModel().to(device)
@@ -25,13 +35,22 @@ transcriber = whisper.load_model("base", device=device)
 async def run_inference_stream(video_path):
     result = await asyncio.to_thread(transcriber.transcribe, video_path, word_timestamps=True)
     utterance_processor = VideoUtteranceProcessor()
-
+    video_duration = get_video_duration(video_path)
     for segment in result["segments"]:
+        start_time = float(segment.get("start", 0))
+        end_time = float(segment.get("end", 0))
+        duration = end_time - start_time
+        if end_time > video_duration or start_time < 0 or duration <= 0.3:
+            print(f"Skipping segment ")
+            continue
         segment_path = None
         try:
             segment_path = await asyncio.to_thread(
                 utterance_processor.extract_segment, video_path, segment["start"], segment["end"]
             )
+            if segment_path is None:
+              print(f"Skipping processing for segment ")
+              continue
 
             video_frames = await asyncio.to_thread(
                 utterance_processor.video_processor.process_video, segment_path
